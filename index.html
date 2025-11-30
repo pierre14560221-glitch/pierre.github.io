@@ -2,92 +2,89 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Shooting Game Full</title>
-
+<title>Shooting Game</title>
 <style>
   body {
     margin: 0;
     background: #000;
     display: flex;
-    justify-content: center;   /* 横中央 */
-    align-items: flex-start;   /* 上から少し下げる */
+    justify-content: center;
+    align-items: center;
     height: 100vh;
     overflow: hidden;
     touch-action: none;
   }
 
-  /* キャンバスは自動でスマホ中央に */
+  #gameWrapper {
+    position: relative;
+  }
+
   canvas {
     background: #111;
     display: block;
-    margin-top: 20px;
-    width: 90vw;      /* スマホ画面の90% → かなり大きい */
-    max-width: 520px; /* 以前の400pxより30%大きい */
-    height: auto;
   }
 
-  #retryBtn {
-    position: fixed;
-    top: 20px;
-    left: 50%;
-    transform: translateX(-50%);
-    display: none;
-    padding: 12px 25px;
-    font-size: 22px;
-    border-radius: 10px;
-    border: none;
-    background: #fff;
-    z-index: 10;
+  #controlsLeft, #controlsRight {
+    position: absolute;
+    top: 0;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
   }
 
-  #mobileControls {
-    display: none;
-    width: 100%;
-    position: fixed;
-    bottom: 15px;
-    left: 0;
-    text-align: center;
-    z-index: 10;
+  #controlsLeft {
+    left: -90px;
+  }
+  #controlsRight {
+    right: -90px;
   }
 
   .ctrlBtn {
     font-size: 26px;
     padding: 18px 28px;
-    margin: 0 12px;
-    border-radius: 10px;
+    margin: 15px 0;
+    border-radius: 12px;
     border: none;
+    background: #fff;
   }
 
-  @media (max-width: 700px) {
-    #mobileControls { display: block; }
+  #retryBtn {
+    position: absolute;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 12px 25px;
+    font-size: 22px;
+    border-radius: 10px;
+    border: none;
+    background: #fff;
+    display: none;
+    z-index: 10;
   }
 </style>
 </head>
+
 <body>
 
-<canvas id="game"></canvas>
-<button id="retryBtn">Play Again</button>
+<div id="gameWrapper">
+  <canvas id="game" width="360" height="540"></canvas>
 
-<div id="mobileControls">
-  <button class="ctrlBtn" id="btnLeft">←</button>
-  <button class="ctrlBtn" id="btnShoot">●</button>
-  <button class="ctrlBtn" id="btnRight">→</button>
+  <button id="retryBtn">Play Again</button>
+
+  <div id="controlsLeft">
+    <button class="ctrlBtn" id="btnLeft">←</button>
+    <button class="ctrlBtn" id="btnRight">→</button>
+  </div>
+
+  <div id="controlsRight">
+    <button class="ctrlBtn" id="btnShoot">●</button>
+  </div>
 </div>
 
 <script>
 const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
-
-function resizeCanvas() {
-  const ratio = 600 / 400;
-  const displayWidth = canvas.clientWidth;
-  canvas.width = displayWidth;
-  canvas.height = displayWidth * ratio;
-}
-resizeCanvas();
-window.addEventListener("resize", resizeCanvas);
-
 const retryBtn = document.getElementById("retryBtn");
 
 const playerImg = new Image(); playerImg.src = "player.png";
@@ -98,15 +95,25 @@ const score50Img = new Image(); score50Img.src = "score50.png";
 
 let score = 0;
 let life = 5;
-const GAME_TIME = 60;
-let startTime = Date.now();
 let isGameOver = false;
+let bullets = [];
+let enemyBullets = [];
+
 let canShoot = true;
 const COOLDOWN = 300;
 
-let player = { x: 200, y: 550 };
-let bullets = [];
-let enemyBullets = [];
+let GAME_TIME = 60;
+let startTime = Date.now();
+
+let player = { x: canvas.width / 2, y: canvas.height - 40 };
+
+function shoot() {
+  if (!isGameOver && canShoot) {
+    bullets.push({ x: player.x, y: player.y });
+    canShoot = false;
+    setTimeout(() => canShoot = true, COOLDOWN);
+  }
+}
 
 setInterval(() => {
   if (!isGameOver) {
@@ -120,31 +127,33 @@ setInterval(() => {
 }, 1000);
 
 document.addEventListener("mousemove", (e) => {
-  const rect = canvas.getBoundingClientRect();
-  player.x = e.clientX - rect.left;
-});
-
-document.addEventListener("click", () => shoot());
-
-canvas.addEventListener("touchmove", (e) => {
-  e.preventDefault();
-  const rect = canvas.getBoundingClientRect();
-  const t = e.touches[0];
-  player.x = t.clientX - rect.left;
-});
-
-canvas.addEventListener("touchstart", (e) => {
-  e.preventDefault();
-  shoot();
-});
-
-function shoot() {
-  if (!isGameOver && canShoot) {
-    bullets.push({ x: player.x, y: player.y });
-    canShoot = false;
-    setTimeout(() => canShoot = true, COOLDOWN);
+  if (window.innerWidth > 600) {
+    const rect = canvas.getBoundingClientRect();
+    player.x = e.clientX - rect.left;
   }
-}
+});
+
+document.addEventListener("click", () => {
+  if (window.innerWidth > 600) shoot();
+});
+
+let moveLeft = false;
+let moveRight = false;
+
+document.getElementById("btnLeft").addEventListener("touchstart", () => moveLeft = true);
+document.getElementById("btnLeft").addEventListener("touchend", () => moveLeft = false);
+
+document.getElementById("btnRight").addEventListener("touchstart", () => moveRight = true);
+document.getElementById("btnRight").addEventListener("touchend", () => moveRight = false);
+
+document.getElementById("btnShoot").addEventListener("touchstart", () => shoot());
+
+retryBtn.addEventListener("click", () => location.reload());
+
+setInterval(() => {
+  if (moveLeft) player.x -= 6;
+  if (moveRight) player.x += 6;
+}, 16);
 
 function update() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -157,7 +166,7 @@ function update() {
 
   if (remaining <= 0 && !isGameOver) {
     isGameOver = true;
-    retryBtn.style.display = "block";
+    showGameOver();
   }
 
   ctx.drawImage(playerImg, player.x - 20, player.y - 20, 40, 40);
@@ -183,7 +192,7 @@ function update() {
       enemyBullets.splice(i, 1);
       if (life <= 0) {
         isGameOver = true;
-        retryBtn.style.display = "block";
+        showGameOver();
       }
     }
 
@@ -197,48 +206,31 @@ function update() {
   });
 
   ctx.fillStyle = "white";
-  ctx.font = "24px Arial";
-  ctx.fillText("Score: " + score, canvas.width - 130, 30);
+  ctx.font = "22px Arial";
   ctx.fillText("Time: " + remaining, 10, 30);
   ctx.fillText("Life: " + life, 10, 60);
+  ctx.fillText("Score: " + score, canvas.width - 130, 30);
 
-  ctx.font = "14px Arial";
-  ctx.fillText("@pierre_log", canvas.width - 100, canvas.height - 10);
+  if (!isGameOver) requestAnimationFrame(update);
+}
 
-  if (isGameOver) {
-    let cx = canvas.width / 2 - 120;
-    let cy = canvas.height / 2 - 120;
+function showGameOver() {
+  retryBtn.style.display = "block";
 
-    if (life <= 0) ctx.drawImage(gameoverImg, cx, cy, 240, 240);
-    else if (score < 30) ctx.drawImage(score30Img, cx, cy, 240, 240);
-    else if (score < 50) ctx.drawImage(score40Img, cx, cy, 240, 240);
-    else ctx.drawImage(score50Img, cx, cy, 240, 240);
+  document.getElementById("controlsLeft").style.display = "none";
+  document.getElementById("controlsRight").style.display = "none";
 
-    return;
-  }
+  let cx = canvas.width / 2 - 120;
+  let cy = canvas.height / 2 - 120;
 
-  requestAnimationFrame(update);
+  if (life <= 0) ctx.drawImage(gameoverImg, cx, cy, 240, 240);
+  else if (score < 30) ctx.drawImage(score30Img, cx, cy, 240, 240);
+  else if (score < 50) ctx.drawImage(score40Img, cx, cy, 240, 240);
+  else ctx.drawImage(score50Img, cx, cy, 240, 240);
 }
 
 update();
-
-retryBtn.addEventListener("click", () => location.reload());
-
-let moveLeft = false;
-let moveRight = false;
-
-btnLeft.addEventListener("touchstart", () => moveLeft = true);
-btnLeft.addEventListener("touchend",   () => moveLeft = false);
-
-btnRight.addEventListener("touchstart", () => moveRight = true);
-btnRight.addEventListener("touchend",   () => moveRight = false);
-
-btnShoot.addEventListener("touchstart", () => shoot());
-
-setInterval(() => {
-  if (moveLeft) player.x -= 6;
-  if (moveRight) player.x += 6;
-}, 16);
 </script>
+
 </body>
 </html>
