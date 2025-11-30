@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8" />
+<title>Shooting Game Full</title>
+<style>
+  body { margin: 0; background: #000; touch-action: none; }
+  canvas { background: #111; display: block; margin: 0 auto; }
+  #retryBtn {
+    display: none;
+    margin: 20px auto;
+    padding: 10px 20px;
+    font-size: 20px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+  }
+</style>
+</head>
+<body>
+
+<canvas id="game" width="400" height="600"></canvas>
+
+<button id="retryBtn">Play Again</button>
+
+<script>
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
+const retryBtn = document.getElementById("retryBtn");
+
+const playerImg = new Image();
+playerImg.src = "player.png";
+
+const gameoverImg = new Image();
+gameoverImg.src = "gameover.png";
+
+const score30Img = new Image();
+score30Img.src = "score30.png";
+
+const score40Img = new Image();
+score40Img.src = "score40.png";
+
+const score50Img = new Image();
+score50Img.src = "score50.png";
+
+let score = 0;
+let life = 5;
+const GAME_TIME = 60;
+let startTime = Date.now();
+let isGameOver = false;
+
+let canShoot = true;
+const COOLDOWN = 300;
+
+let player = { x: 200, y: 550 };
+
+let bullets = [];
+let enemyBullets = [];
+
+setInterval(() => {
+  if (!isGameOver) {
+    enemyBullets.push({
+      x: Math.random() * 380 + 10,
+      y: 0,
+      size: 10,
+      speed: 3 + Math.random() * 2
+    });
+  }
+}, 1000);
+
+document.addEventListener("mousemove", (e) => {
+  const rect = canvas.getBoundingClientRect();
+  player.x = e.clientX - rect.left;
+});
+
+document.addEventListener("click", shoot);
+
+canvas.addEventListener("touchmove", (e) => {
+  e.preventDefault();
+  const rect = canvas.getBoundingClientRect();
+  const touch = e.touches[0];
+  player.x = touch.clientX - rect.left;
+});
+
+canvas.addEventListener("touchstart", (e) => {
+  e.preventDefault();
+  shoot();
+});
+
+function shoot() {
+  if (!isGameOver && canShoot) {
+    bullets.push({ x: player.x, y: player.y });
+    canShoot = false;
+    setTimeout(() => { canShoot = true; }, COOLDOWN);
+  }
+}
+
+function update() {
+  ctx.clearRect(0, 0, 400, 600);
+
+  let elapsed = (Date.now() - startTime) / 1000;
+  let remaining = Math.max(0, GAME_TIME - Math.floor(elapsed));
+
+  if (remaining <= 0 && !isGameOver) {
+    isGameOver = true;
+    retryBtn.style.display = "block";
+  }
+
+  ctx.drawImage(playerImg, player.x - 20, player.y - 20, 40, 40);
+
+  ctx.fillStyle = "yellow";
+  bullets.forEach((b, i) => {
+    b.y -= 5;
+    ctx.fillRect(b.x - 2, b.y, 4, 10);
+    if (b.y < 0) bullets.splice(i, 1);
+  });
+
+  ctx.fillStyle = "red";
+  enemyBullets.forEach((eb, i) => {
+    eb.y += eb.speed;
+    ctx.beginPath();
+    ctx.arc(eb.x, eb.y, eb.size, 0, Math.PI * 2);
+    ctx.fill();
+
+    if (eb.y > 600) enemyBullets.splice(i, 1);
+
+    if (Math.abs(player.x - eb.x) < 20 &&
+        Math.abs(player.y - eb.y) < 20) {
+      life--;
+      enemyBullets.splice(i, 1);
+      if (life <= 0) {
+        isGameOver = true;
+        retryBtn.style.display = "block";
+      }
+    }
+
+    bullets.forEach((b, bi) => {
+      if (Math.abs(b.x - eb.x) < 10 &&
+          Math.abs(b.y - eb.y) < 10) {
+        score++;
+        bullets.splice(bi, 1);
+        enemyBullets.splice(i, 1);
+      }
+    });
+  });
+
+  ctx.fillStyle = "white";
+  ctx.font = "24px Arial";
+  ctx.fillText("Score: " + score, 270, 30);
+  ctx.fillText("Time: " + remaining, 10, 30);
+  ctx.fillText("Life: " + life, 10, 60);
+
+  ctx.fillStyle = "white";
+  ctx.font = "14px Arial";
+  ctx.fillText("@pierre_log", 300, 590);
+
+  if (isGameOver) {
+
+    if (life <= 0) {
+      ctx.drawImage(gameoverImg, 80, 180, 240, 240);
+      return;
+    }
+
+    if (score < 30) {
+      ctx.drawImage(score30Img, 80, 180, 240, 240);
+    } else if (score < 50) {
+      ctx.drawImage(score40Img, 80, 180, 240, 240);
+    } else {
+      ctx.drawImage(score50Img, 80, 180, 240, 240);
+    }
+
+    return;
+  }
+
+  requestAnimationFrame(update);
+}
+
+update();
+
+retryBtn.addEventListener("click", () => {
+  location.reload();
+});
+</script>
+</body>
+</html>
