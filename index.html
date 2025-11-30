@@ -5,14 +5,7 @@
 <title>Shooting Game Full</title>
 <style>
   body { margin: 0; background: #000; touch-action: none; }
-  canvas { background: #111; display: block; margin: 0 auto; }
-
-@media (max-width: 600px) {
-  canvas {
-    width: 100vw !important;
-    height: auto !important;
-  }
-}
+  canvas { background: #111; display: block; margin: 0 auto; width: 100%; height: auto; }
 
   #retryBtn {
     display: none;
@@ -27,8 +20,7 @@
 </head>
 <body>
 
-<canvas id="game" width="400" height="600"></canvas>
-
+<canvas id="game"></canvas>
 <button id="retryBtn">Play Again</button>
 
 <script>
@@ -36,20 +28,18 @@ const canvas = document.getElementById("game");
 
 function resizeCanvas() {
   if (window.innerWidth < 600) {
-
     canvas.width = window.innerWidth;
-    canvas.height = window.innerWidth * (600 / 400); // アスペクト比保持
+    canvas.height = window.innerWidth * (600 / 400);
   } else {
-  
     canvas.width = 400;
     canvas.height = 600;
   }
 }
 resizeCanvas();
-
 window.addEventListener("resize", resizeCanvas);
 
 const ctx = canvas.getContext("2d");
+
 const retryBtn = document.getElementById("retryBtn");
 
 const playerImg = new Image();
@@ -84,7 +74,7 @@ let enemyBullets = [];
 setInterval(() => {
   if (!isGameOver) {
     enemyBullets.push({
-      x: Math.random() * 380 + 10,
+      x: Math.random() * canvas.width,
       y: 0,
       size: 10,
       speed: 3 + Math.random() * 2
@@ -120,7 +110,7 @@ function shoot() {
 }
 
 function update() {
-  ctx.clearRect(0, 0, 400, 600);
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
 
   let elapsed = (Date.now() - startTime) / 1000;
   let remaining = Math.max(0, GAME_TIME - Math.floor(elapsed));
@@ -146,7 +136,7 @@ function update() {
     ctx.arc(eb.x, eb.y, eb.size, 0, Math.PI * 2);
     ctx.fill();
 
-    if (eb.y > 600) enemyBullets.splice(i, 1);
+    if (eb.y > canvas.height) enemyBullets.splice(i, 1);
 
     if (Math.abs(player.x - eb.x) < 20 &&
         Math.abs(player.y - eb.y) < 20) {
@@ -159,8 +149,8 @@ function update() {
     }
 
     bullets.forEach((b, bi) => {
-      if (Math.abs(b.x - eb.x) < 10 &&
-          Math.abs(b.y - eb.y) < 10) {
+      if (Math.abs(b.x - eb.x) < eb.size &&
+          Math.abs(b.y - eb.y) < eb.size) {
         score++;
         bullets.splice(bi, 1);
         enemyBullets.splice(i, 1);
@@ -170,29 +160,27 @@ function update() {
 
   ctx.fillStyle = "white";
   ctx.font = "24px Arial";
-  ctx.fillText("Score: " + score, 270, 30);
+  ctx.fillText("Score: " + score, canvas.width - 140, 30);
   ctx.fillText("Time: " + remaining, 10, 30);
   ctx.fillText("Life: " + life, 10, 60);
 
   ctx.fillStyle = "white";
   ctx.font = "14px Arial";
-  ctx.fillText("@pierre_log", 300, 590);
+  ctx.fillText("@pierre_log", canvas.width - 110, canvas.height - 10);
 
   if (isGameOver) {
-
     if (life <= 0) {
-      ctx.drawImage(gameoverImg, 80, 180, 240, 240);
+      ctx.drawImage(gameoverImg, canvas.width/2 - 120, 180, 240, 240);
       return;
     }
 
     if (score < 30) {
-      ctx.drawImage(score30Img, 80, 180, 240, 240);
+      ctx.drawImage(score30Img, canvas.width/2 - 120, 180, 240, 240);
     } else if (score < 50) {
-      ctx.drawImage(score40Img, 80, 180, 240, 240);
+      ctx.drawImage(score40Img, canvas.width/2 - 120, 180, 240, 240);
     } else {
-      ctx.drawImage(score50Img, 80, 180, 240, 240);
+      ctx.drawImage(score50Img, canvas.width/2 - 120, 180, 240, 240);
     }
-
     return;
   }
 
