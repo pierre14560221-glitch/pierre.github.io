@@ -33,6 +33,22 @@
 
 <script>
 const canvas = document.getElementById("game");
+
+function resizeCanvas() {
+  if (window.innerWidth < 600) {
+
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerWidth * (600 / 400); // アスペクト比保持
+  } else {
+  
+    canvas.width = 400;
+    canvas.height = 600;
+  }
+}
+resizeCanvas();
+
+window.addEventListener("resize", resizeCanvas);
+
 const ctx = canvas.getContext("2d");
 const retryBtn = document.getElementById("retryBtn");
 
