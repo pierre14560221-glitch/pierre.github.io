@@ -58,8 +58,12 @@ const bgmTitle = new Audio("title.mp3");
 const bgmGame = new Audio("game.mp3");
 bgmTitle.loop = true;
 bgmGame.loop = true;
+bgmTitle.volume = 0.6;
+bgmGame.volume = 0.6;
 
 let gameState = "title";
+let titleBgmStarted = false;
+
 let score = 0;
 let life = 5;
 let isGameOver = false;
@@ -109,10 +113,11 @@ function startGame() {
 function advanceIntroState() {
   if (gameState === "title") {
     gameState = "rules";
-    playTitleBgm();
   } else if (gameState === "rules") {
     gameState = "controls";
   } else if (gameState === "controls") {
+    gameState = "credits";
+  } else if (gameState === "credits") {
     gameState = "start";
   } else if (gameState === "start") {
     startGame();
@@ -122,12 +127,18 @@ function advanceIntroState() {
 function handleInput() {
   if (gameState === "playing") {
     shoot();
-  } else if (gameState === "title" || gameState === "rules" || gameState === "controls" || gameState === "start") {
+  } else if (
+    gameState === "title" ||
+    gameState === "rules" ||
+    gameState === "controls" ||
+    gameState === "credits" ||
+    gameState === "start"
+  ) {
     advanceIntroState();
   }
 }
 
-document.addEventListener("click", (e) => {
+document.addEventListener("click", () => {
   handleInput();
 });
 
@@ -213,8 +224,8 @@ function drawRulesScreen() {
     "前方から飛んでくる赤い弾を、",
     "左右に動いて避けながら撃ち落とそう！",
     "",
-    "弾に当たるとライフが1減ります。",
-    "ライフは5つあります。",
+    "赤い弾に当たるとライフが1つ減るぞ。",
+    "ライフが0になるとゲームオーバーだ。",
     "",
     "▶ タップして次へ"
   ];
@@ -239,10 +250,37 @@ function drawControlsScreen() {
     "発射：別の指で画面タップ",
     "",
     "PC：",
-    "移動：マウス（龍水がマウスを追いかけます）",
+    "移動：マウス",
     "発射：左クリック",
     "",
-    "▶ Are you ready？（タップでSTART画面へ）"
+    "▶ タップして次へ"
+  ];
+  for (let i = 0; i < lines.length; i++) {
+    ctx.fillText(lines[i], 20, y + i * 30);
+  }
+}
+
+function drawCreditsScreen() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.fillStyle = "black";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.fillStyle = "white";
+  ctx.font = "24px Arial";
+  ctx.fillText("■使用させていただいた音源", 20, 80);
+
+  ctx.font = "18px Arial";
+  let y = 130;
+  const lines = [
+    "タイトル・ルール画面BGM：",
+    "ザイオン様「The Swing of Time」",
+    "",
+    "ゲームBGM：",
+    "北見ヒツジ様「Lame SPY」",
+    "",
+    "音源提供：フリーBGM",
+    "DOVA-SYNDROME 様",
+    "",
+    "▶ タップして次へ"
   ];
   for (let i = 0; i < lines.length; i++) {
     ctx.fillText(lines[i], 20, y + i * 30);
@@ -261,6 +299,10 @@ function update() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
   if (gameState === "title") {
+    if (!titleBgmStarted) {
+      playTitleBgm();
+      titleBgmStarted = true;
+    }
     drawTitleScreen();
     requestAnimationFrame(update);
     return;
@@ -274,6 +316,12 @@ function update() {
 
   if (gameState === "controls") {
     drawControlsScreen();
+    requestAnimationFrame(update);
+    return;
+  }
+
+  if (gameState === "credits") {
+    drawCreditsScreen();
     requestAnimationFrame(update);
     return;
   }
@@ -355,11 +403,7 @@ function update() {
     }
   }
 
-  if (!isGameOver || gameState !== "ended") {
-    requestAnimationFrame(update);
-  } else {
-    requestAnimationFrame(update);
-  }
+  requestAnimationFrame(update);
 }
 
 update();
