@@ -3,10 +3,10 @@
 <head>
 <meta charset="UTF-8" />
 <title>Shooting Game Full</title>
+
 <style>
   body { margin: 0; background: #000; touch-action: none; }
-
-  canvas { background: #111; display: block; margin: 0 auto; }
+  canvas { background: #111; display: block; margin: 0 auto; width: 100%; max-width: 400px; height: auto; }
 
   #retryBtn {
     position: fixed;
@@ -19,21 +19,23 @@
     border-radius: 10px;
     border: none;
     background: #fff;
+    z-index: 10;
   }
 
   #mobileControls {
     display: none;
     width: 100%;
     position: fixed;
-    bottom: 10px;
+    bottom: 15px;
     left: 0;
     text-align: center;
+    z-index: 10;
   }
 
   .ctrlBtn {
-    font-size: 24px;
-    padding: 15px 25px;
-    margin: 0 10px;
+    font-size: 26px;
+    padding: 18px 28px;
+    margin: 0 12px;
     border-radius: 10px;
     border: none;
   }
@@ -42,11 +44,11 @@
     #mobileControls { display: block; }
   }
 </style>
+
 </head>
 <body>
 
-<canvas id="game" width="400" height="600"></canvas>
-
+<canvas id="game"></canvas>
 <button id="retryBtn">Play Again</button>
 
 <div id="mobileControls">
@@ -60,22 +62,10 @@ const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
 
 function resizeCanvas() {
-  if (window.innerWidth < 600) {
-    const maxHeight = window.innerHeight * 0.75;
-    const width = window.innerWidth * 0.90;
-    const height = width * (600 / 400);
-
-    if (height > maxHeight) {
-      canvas.height = maxHeight;
-      canvas.width = maxHeight * (400 / 600);
-    } else {
-      canvas.width = width;
-      canvas.height = height;
-    }
-  } else {
-    canvas.width = 400;
-    canvas.height = 600;
-  }
+  const ratio = 600 / 400;
+  const width = Math.min(window.innerWidth * 0.9, 400);
+  canvas.width = width;
+  canvas.height = width * ratio;
 }
 resizeCanvas();
 window.addEventListener("resize", resizeCanvas);
@@ -96,7 +86,7 @@ let isGameOver = false;
 let canShoot = true;
 const COOLDOWN = 300;
 
-let player = { x: 200, y: 550 };
+let player = { x: 200, y: canvas.height - 50 };
 let bullets = [];
 let enemyBullets = [];
 
@@ -170,8 +160,7 @@ function update() {
 
     if (eb.y > canvas.height) enemyBullets.splice(i, 1);
 
-    if (Math.abs(player.x - eb.x) < 20 &&
-        Math.abs(player.y - eb.y) < 20) {
+    if (Math.abs(player.x - eb.x) < 20 && Math.abs(player.y - eb.y) < 20) {
       life--;
       enemyBullets.splice(i, 1);
       if (life <= 0) {
@@ -181,8 +170,7 @@ function update() {
     }
 
     bullets.forEach((b, bi) => {
-      if (Math.abs(b.x - eb.x) < 10 &&
-          Math.abs(b.y - eb.y) < 10) {
+      if (Math.abs(b.x - eb.x) < 10 && Math.abs(b.y - eb.y) < 10) {
         score++;
         bullets.splice(bi, 1);
         enemyBullets.splice(i, 1);
@@ -196,21 +184,18 @@ function update() {
   ctx.fillText("Time: " + remaining, 10, 30);
   ctx.fillText("Life: " + life, 10, 60);
 
+  ctx.font = "14px Arial";
   ctx.fillText("@pierre_log", canvas.width - 100, canvas.height - 10);
 
   if (isGameOver) {
     let cx = canvas.width / 2 - 120;
     let cy = canvas.height / 2 - 120;
 
-    if (life <= 0) {
-      ctx.drawImage(gameoverImg, cx, cy, 240, 240);
-    } else if (score < 30) {
-      ctx.drawImage(score30Img, cx, cy, 240, 240);
-    } else if (score < 50) {
-      ctx.drawImage(score40Img, cx, cy, 240, 240);
-    } else {
-      ctx.drawImage(score50Img, cx, cy, 240, 240);
-    }
+    if (life <= 0) ctx.drawImage(gameoverImg, cx, cy, 240, 240);
+    else if (score < 30) ctx.drawImage(score30Img, cx, cy, 240, 240);
+    else if (score < 50) ctx.drawImage(score40Img, cx, cy, 240, 240);
+    else ctx.drawImage(score50Img, cx, cy, 240, 240);
+
     return;
   }
 
@@ -221,21 +206,22 @@ update();
 
 retryBtn.addEventListener("click", () => location.reload());
 
-document.getElementById("btnLeft").addEventListener("touchstart", () => moveLeft = true);
-document.getElementById("btnLeft").addEventListener("touchend", () => moveLeft = false);
-
-document.getElementById("btnRight").addEventListener("touchstart", () => moveRight = true);
-document.getElementById("btnRight").addEventListener("touchend", () => moveRight = false);
-
-document.getElementById("btnShoot").addEventListener("touchstart", () => shoot());
-
 let moveLeft = false;
 let moveRight = false;
+
+btnLeft.addEventListener("touchstart", () => moveLeft = true);
+btnLeft.addEventListener("touchend", () => moveLeft = false);
+
+btnRight.addEventListener("touchstart", () => moveRight = true);
+btnRight.addEventListener("touchend", () => moveRight = false);
+
+btnShoot.addEventListener("touchstart", () => shoot());
 
 setInterval(() => {
   if (moveLeft) player.x -= 6;
   if (moveRight) player.x += 6;
 }, 16);
 </script>
+
 </body>
 </html>
