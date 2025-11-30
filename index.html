@@ -2,12 +2,30 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Shooting Game Full</title>
 
 <style>
-  body { margin: 0; background: #000; touch-action: none; }
-  canvas { background: #111; display: block; margin: 0 auto; width: 100%; max-width: 400px; height: auto; }
+  body {
+    margin: 0;
+    background: #000;
+    display: flex;
+    justify-content: center;   /* 横中央 */
+    align-items: flex-start;   /* 上から少し下げる */
+    height: 100vh;
+    overflow: hidden;
+    touch-action: none;
+  }
+
+  /* キャンバスは自動でスマホ中央に */
+  canvas {
+    background: #111;
+    display: block;
+    margin-top: 20px;
+    width: 90vw;      /* スマホ画面の90% → かなり大きい */
+    max-width: 520px; /* 以前の400pxより30%大きい */
+    height: auto;
+  }
 
   #retryBtn {
     position: fixed;
@@ -41,11 +59,10 @@
     border: none;
   }
 
-  @media (max-width: 600px) {
+  @media (max-width: 700px) {
     #mobileControls { display: block; }
   }
 </style>
-
 </head>
 <body>
 
@@ -64,9 +81,9 @@ const ctx = canvas.getContext("2d");
 
 function resizeCanvas() {
   const ratio = 600 / 400;
-  const width = Math.min(window.innerWidth * 0.9, 400);
-  canvas.width = width;
-  canvas.height = width * ratio;
+  const displayWidth = canvas.clientWidth;
+  canvas.width = displayWidth;
+  canvas.height = displayWidth * ratio;
 }
 resizeCanvas();
 window.addEventListener("resize", resizeCanvas);
@@ -87,7 +104,7 @@ let isGameOver = false;
 let canShoot = true;
 const COOLDOWN = 300;
 
-let player = { x: 200, y: canvas.height - 50 };
+let player = { x: 200, y: 550 };
 let bullets = [];
 let enemyBullets = [];
 
@@ -211,10 +228,10 @@ let moveLeft = false;
 let moveRight = false;
 
 btnLeft.addEventListener("touchstart", () => moveLeft = true);
-btnLeft.addEventListener("touchend", () => moveLeft = false);
+btnLeft.addEventListener("touchend",   () => moveLeft = false);
 
 btnRight.addEventListener("touchstart", () => moveRight = true);
-btnRight.addEventListener("touchend", () => moveRight = false);
+btnRight.addEventListener("touchend",   () => moveRight = false);
 
 btnShoot.addEventListener("touchstart", () => shoot());
 
@@ -223,6 +240,5 @@ setInterval(() => {
   if (moveRight) player.x += 6;
 }, 16);
 </script>
-
 </body>
 </html>
