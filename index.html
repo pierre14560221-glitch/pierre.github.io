@@ -2,6 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Shooting Game</title>
 <style>
   body {
@@ -35,7 +36,6 @@
   }
 </style>
 </head>
-
 <body>
 
 <button id="retryBtn">Play Again</button>
@@ -46,160 +46,321 @@ const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
 const retryBtn = document.getElementById("retryBtn");
 
-function resizeCanvas() {
-  const ratio = 540 / 360;
-
-  let w = window.innerWidth * 0.9;
-  let h = w * ratio;
-
-  if (h > window.innerHeight * 0.9) {
-    h = window.innerHeight * 0.9;
-    w = h / ratio;
-  }
-
-  canvas.width = w;
-  canvas.height = h;
-}
-resizeCanvas();
-window.addEventListener("resize", resizeCanvas);
-
 const playerImg = new Image(); playerImg.src = "player.png";
 const gameoverImg = new Image(); gameoverImg.src = "gameover.png";
 const score30Img = new Image(); score30Img.src = "score30.png";
 const score40Img = new Image(); score40Img.src = "score40.png";
 const score50Img = new Image(); score50Img.src = "score50.png";
+const titleImg = new Image(); titleImg.src = "title.png";
+const startImg = new Image(); startImg.src = "start.png";
 
+const bgmTitle = new Audio("title.mp3");
+const bgmGame = new Audio("game.mp3");
+bgmTitle.loop = true;
+bgmGame.loop = true;
+
+let gameState = "title";
 let score = 0;
 let life = 5;
 let isGameOver = false;
-
 let bullets = [];
 let enemyBullets = [];
+let currentResultImg = null;
 
+const GAME_TIME = 60;
+let startTime = Date.now();
 let canShoot = true;
 const COOLDOWN = 300;
 
-let GAME_TIME = 60;
-let startTime = Date.now();
+let player = { x: canvas.width / 2, y: canvas.height * 0.85 };
 
-let player = { x: canvas.width/2, y: canvas.height*0.85 };
+function playTitleBgm() {
+  bgmGame.pause();
+  bgmGame.currentTime = 0;
+  bgmTitle.currentTime = 0;
+  bgmTitle.play().catch(() => {});
+}
 
-function shoot() {
-  if (!isGameOver && canShoot) {
-    bullets.push({ x: player.x, y: player.y });
-    canShoot = false;
-    setTimeout(() => canShoot = true, COOLDOWN);
+function playGameBgm() {
+  bgmTitle.pause();
+  bgmTitle.currentTime = 0;
+  bgmGame.currentTime = 0;
+  bgmGame.play().catch(() => {});
+}
+
+function resetGameVariables() {
+  score = 0;
+  life = 5;
+  bullets = [];
+  enemyBullets = [];
+  player = { x: canvas.width / 2, y: canvas.height * 0.85 };
+  startTime = Date.now();
+  isGameOver = false;
+  currentResultImg = null;
+}
+
+function startGame() {
+  resetGameVariables();
+  gameState = "playing";
+  retryBtn.style.display = "none";
+  playGameBgm();
+}
+
+function advanceIntroState() {
+  if (gameState === "title") {
+    gameState = "rules";
+    playTitleBgm();
+  } else if (gameState === "rules") {
+    gameState = "controls";
+  } else if (gameState === "controls") {
+    gameState = "start";
+  } else if (gameState === "start") {
+    startGame();
   }
 }
 
-setInterval(() => {
-  if (!isGameOver) {
-    enemyBullets.push({
-      x: Math.random() * (canvas.width - 20) + 10,
-      y: 0,
-      size: 10,
-      speed: 3 + Math.random()*2
-    });
+function handleInput() {
+  if (gameState === "playing") {
+    shoot();
+  } else if (gameState === "title" || gameState === "rules" || gameState === "controls" || gameState === "start") {
+    advanceIntroState();
   }
-}, 1000);
+}
 
-document.addEventListener("mousemove", e => {
-  if (window.innerWidth > 600) {
+document.addEventListener("click", (e) => {
+  handleInput();
+});
+
+canvas.addEventListener("touchstart", (e) => {
+  e.preventDefault();
+  handleInput();
+});
+
+canvas.addEventListener("touchmove", (e) => {
+  e.preventDefault();
+  if (gameState === "playing") {
+    const rect = canvas.getBoundingClientRect();
+    const t = e.touches[0];
+    player.x = t.clientX - rect.left;
+  }
+});
+
+document.addEventListener("mousemove", (e) => {
+  if (window.innerWidth > 600 && gameState === "playing") {
     const rect = canvas.getBoundingClientRect();
     player.x = e.clientX - rect.left;
   }
 });
 
-document.addEventListener("click", e => {
-  if (window.innerWidth > 600) shoot();
+retryBtn.addEventListener("click", () => {
+  startGame();
 });
 
-canvas.addEventListener("touchmove", e => {
-  e.preventDefault();
-  const rect = canvas.getBoundingClientRect();
-  const t = e.touches[0];
-  player.x = t.clientX - rect.left;
-});
+function shoot() {
+  if (!isGameOver && canShoot && gameState === "playing") {
+    bullets.push({ x: player.x, y: player.y });
+    canShoot = false;
+    setTimeout(() => { canShoot = true; }, COOLDOWN);
+  }
+}
 
-canvas.addEventListener("touchstart", e => {
-  e.preventDefault();
-  shoot();
-});
+setInterval(() => {
+  if (gameState === "playing" && !isGameOver) {
+    enemyBullets.push({
+      x: Math.random() * (canvas.width - 20) + 10,
+      y: 0,
+      size: 10,
+      speed: 3 + Math.random() * 2
+    });
+  }
+}, 1000);
+
+function triggerGameOver() {
+  if (isGameOver) return;
+  isGameOver = true;
+  gameState = "ended";
+  retryBtn.style.display = "block";
+
+  if (life <= 0) {
+    currentResultImg = gameoverImg;
+  } else if (score < 30) {
+    currentResultImg = score30Img;
+  } else if (score < 50) {
+    currentResultImg = score40Img;
+  } else {
+    currentResultImg = score50Img;
+  }
+}
+
+function drawTitleScreen() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  const size = Math.min(canvas.width * 0.9, canvas.height * 0.9);
+  const x = (canvas.width - size) / 2;
+  const y = (canvas.height - size) / 2;
+  ctx.drawImage(titleImg, x, y, size, size);
+}
+
+function drawRulesScreen() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.fillStyle = "black";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.fillStyle = "white";
+  ctx.font = "24px Arial";
+  ctx.fillText("■ルール", 40, 80);
+  ctx.font = "18px Arial";
+  let y = 130;
+  const lines = [
+    "前方から飛んでくる赤い弾を、",
+    "左右に動いて避けながら撃ち落とそう！",
+    "",
+    "弾に当たるとライフが1減ります。",
+    "ライフは5つあります。",
+    "",
+    "▶ タップして次へ"
+  ];
+  for (let i = 0; i < lines.length; i++) {
+    ctx.fillText(lines[i], 40, y + i * 30);
+  }
+}
+
+function drawControlsScreen() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.fillStyle = "black";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.fillStyle = "white";
+  ctx.font = "24px Arial";
+  ctx.fillText("■操作方法", 40, 80);
+
+  ctx.font = "18px Arial";
+  let y = 130;
+  const lines = [
+    "スマホ：",
+    "移動：指を画面に置いたまま左右にスライド",
+    "発射：別の指で画面タップ",
+    "",
+    "PC：",
+    "移動：マウス（龍水がマウスを追いかけます）",
+    "発射：左クリック",
+    "",
+    "▶ Are you ready？（タップでSTART画面へ）"
+  ];
+  for (let i = 0; i < lines.length; i++) {
+    ctx.fillText(lines[i], 20, y + i * 30);
+  }
+}
+
+function drawStartScreen() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  const size = Math.min(canvas.width * 0.9, canvas.height * 0.9);
+  const x = (canvas.width - size) / 2;
+  const y = (canvas.height - size) / 2;
+  ctx.drawImage(startImg, x, y, size, size);
+}
 
 function update() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
+  if (gameState === "title") {
+    drawTitleScreen();
+    requestAnimationFrame(update);
+    return;
+  }
+
+  if (gameState === "rules") {
+    drawRulesScreen();
+    requestAnimationFrame(update);
+    return;
+  }
+
+  if (gameState === "controls") {
+    drawControlsScreen();
+    requestAnimationFrame(update);
+    return;
+  }
+
+  if (gameState === "start") {
+    drawStartScreen();
+    requestAnimationFrame(update);
+    return;
+  }
+
   if (player.x < 20) player.x = 20;
   if (player.x > canvas.width - 20) player.x = canvas.width - 20;
 
-  let elapsed = (Date.now() - startTime) / 1000;
-  let remaining = Math.max(0, GAME_TIME - Math.floor(elapsed));
-
-  if (remaining <= 0 && !isGameOver) {
-    isGameOver = true;
-    showGameOver();
-  }
-
-  ctx.drawImage(playerImg, player.x - 20, player.y - 20, 40, 40);
-
-  ctx.fillStyle = "yellow";
-  bullets.forEach((b, i) => {
-    b.y -= 5;
-    ctx.fillRect(b.x - 2, b.y, 4, 10);
-    if (b.y < 0) bullets.splice(i, 1);
-  });
-
-  ctx.fillStyle = "red";
-  enemyBullets.forEach((eb, i) => {
-    eb.y += eb.speed;
-    ctx.beginPath();
-    ctx.arc(eb.x, eb.y, eb.size, 0, Math.PI * 2);
-    ctx.fill();
-
-    if (eb.y > canvas.height) enemyBullets.splice(i, 1);
-
-    if (Math.abs(player.x - eb.x) < 20 &&
-        Math.abs(player.y - eb.y) < 20) {
-      life--;
-      enemyBullets.splice(i, 1);
-      if (life <= 0) {
-        isGameOver = true;
-        showGameOver();
-      }
+  if (gameState === "playing" && !isGameOver) {
+    let elapsed = (Date.now() - startTime) / 1000;
+    let remaining = Math.max(0, GAME_TIME - Math.floor(elapsed));
+    if (remaining <= 0) {
+      triggerGameOver();
     }
 
-    bullets.forEach((b, bi) => {
-      if (Math.abs(b.x - eb.x) < 10 &&
-          Math.abs(b.y - eb.y) < 10) {
-        score++;
-        bullets.splice(bi, 1);
-        enemyBullets.splice(i, 1);
-      }
+    ctx.drawImage(playerImg, player.x - 20, player.y - 20, 40, 40);
+
+    ctx.fillStyle = "yellow";
+    bullets.forEach((b, i) => {
+      b.y -= 5;
+      ctx.fillRect(b.x - 2, b.y, 4, 10);
+      if (b.y < 0) bullets.splice(i, 1);
     });
-  });
 
-  ctx.fillStyle = "white";
-  ctx.font = "22px Arial";
-  ctx.fillText("Time: " + remaining, 10, 30);
-  ctx.fillText("Life: " + life, 10, 60);
-  ctx.fillText("Score: " + score, canvas.width - 130, 30);
+    ctx.fillStyle = "red";
+    enemyBullets.forEach((eb, i) => {
+      eb.y += eb.speed;
+      ctx.beginPath();
+      ctx.arc(eb.x, eb.y, eb.size, 0, Math.PI * 2);
+      ctx.fill();
 
-  if (!isGameOver) requestAnimationFrame(update);
+      if (eb.y > canvas.height) enemyBullets.splice(i, 1);
+
+      if (Math.abs(player.x - eb.x) < 20 && Math.abs(player.y - eb.y) < 20) {
+        life--;
+        enemyBullets.splice(i, 1);
+        if (life <= 0) {
+          triggerGameOver();
+        }
+      }
+
+      bullets.forEach((b, bi) => {
+        if (Math.abs(b.x - eb.x) < 10 && Math.abs(b.y - eb.y) < 10) {
+          score++;
+          bullets.splice(bi, 1);
+          enemyBullets.splice(i, 1);
+        }
+      });
+    });
+
+    ctx.fillStyle = "white";
+    ctx.font = "22px Arial";
+    let elapsed2 = (Date.now() - startTime) / 1000;
+    let remaining2 = Math.max(0, GAME_TIME - Math.floor(elapsed2));
+    ctx.fillText("Time: " + remaining2, 10, 30);
+    ctx.fillText("Life: " + life, 10, 60);
+    ctx.fillText("Score: " + score, canvas.width - 130, 30);
+
+  } else if (gameState === "ended") {
+    ctx.drawImage(playerImg, player.x - 20, player.y - 20, 40, 40);
+
+    ctx.fillStyle = "white";
+    ctx.font = "22px Arial";
+    ctx.fillText("Time: 0", 10, 30);
+    ctx.fillText("Life: " + life, 10, 60);
+    ctx.fillText("Score: " + score, canvas.width - 130, 30);
+
+    if (currentResultImg) {
+      const w = 240;
+      const h = 240;
+      const x = canvas.width / 2 - w / 2;
+      const y = canvas.height / 2 - h / 2;
+      ctx.drawImage(currentResultImg, x, y, w, h);
+    }
+  }
+
+  if (!isGameOver || gameState !== "ended") {
+    requestAnimationFrame(update);
+  } else {
+    requestAnimationFrame(update);
+  }
 }
-
-function showGameOver() {
-  retryBtn.style.display = "block";
-
-  let cx = canvas.width/2 - 120;
-  let cy = canvas.height/2 - 120;
-
-  if (life <= 0) ctx.drawImage(gameoverImg, cx, cy, 240, 240);
-  else if (score < 30) ctx.drawImage(score30Img, cx, cy, 240, 240);
-  else if (score < 50) ctx.drawImage(score40Img, cx, cy, 240, 240);
-  else ctx.drawImage(score50Img, cx, cy, 240, 240);
-}
-
-retryBtn.addEventListener("click", () => location.reload());
 
 update();
 </script>
