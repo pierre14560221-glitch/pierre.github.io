@@ -88,6 +88,7 @@
     let startTime = 0;
     let canShoot = true;
     let isGameOver = false;
+    let displayedTime = GAME_TIME;
 
     let player = { x: canvas.width / 2, y: canvas.height - 70 };
     let bullets = [];
@@ -103,6 +104,7 @@
       enemyBullets = [];
       player.x = canvas.width / 2;
       player.y = canvas.height - 70;
+      displayedTime = GAME_TIME;
     }
 
     function startGame(fromRetry) {
@@ -121,7 +123,6 @@
     function stopGame() {
       isGameOver = true;
       screen = "gameOver";
-      gameBgm.pause();
       retryBtn.style.display = "block";
     }
 
@@ -224,6 +225,7 @@
 
       let elapsed = (Date.now() - startTime) / 1000;
       let remaining = Math.max(0, GAME_TIME - Math.floor(elapsed));
+      displayedTime = remaining;
 
       if (remaining <= 0 && !isGameOver) {
         stopGame();
@@ -282,6 +284,20 @@
 
     function drawGameOver() {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      ctx.fillStyle = "white";
+      ctx.textAlign = "left";
+      ctx.font = "24px Arial";
+      ctx.fillText("Time: " + displayedTime, 20, 30);
+      ctx.fillText("Life: " + life, 20, 60);
+
+      ctx.textAlign = "right";
+      ctx.fillText("Score: " + score, canvas.width - 20, 30);
+
+      ctx.textAlign = "right";
+      ctx.font = "14px Arial";
+      ctx.fillText("@pierre_log", canvas.width - 10, canvas.height - 10);
+
       let img;
       if (life <= 0) {
         img = gameoverImg;
@@ -329,7 +345,7 @@
           "■操作方法",
           "・スマホ",
           "  移動：指を画面に置いたまま",
-           "         左右にスライド",
+          "         左右にスライド",
           "  発射：別の指で画面タップ",
           "",
           "・PC",
@@ -341,18 +357,18 @@
       } else if (screen === "credits") {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         drawMultilineText([
- "◾︎使用させていただいた音源",
-  "",
-  "タイトル・ルール画面BGM：",
-  "北見ヒツジ様「Lame SPY」",
-  "",
-  "ゲームBGM：",
-  "ザイオン様「The Swing of Time」",
-  "",
-  "音源提供：フリーBGM",
-  "DOVA-SYNDROME 様",
-  "",
-  "▶︎次のページ"
+          "◾︎使用させていただいた音源",
+          "",
+          "タイトル・ルール画面BGM：",
+          "北見ヒツジ様「Lame SPY」",
+          "",
+          "ゲームBGM：",
+          "ザイオン様「The Swing of Time」",
+          "",
+          "音源提供：フリーBGM",
+          "DOVA-SYNDROME 様",
+          "",
+          "▶︎次のページ"
         ]);
       } else if (screen === "startPrompt") {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
