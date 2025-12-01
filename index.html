@@ -205,7 +205,7 @@
 
     function drawMultilineText(lines) {
       ctx.fillStyle = "white";
-      ctx.font = "18px Arial";
+      ctx.font = "16px Arial";
       ctx.textAlign = "left";
       const lineHeight = 28;
       let y = canvas.height / 2 - (lines.length * lineHeight) / 2;
@@ -317,7 +317,7 @@
           "左右に避けながら撃ち落とそう！",
           "",
           "赤い弾に当たるとライフが1減ります。",
-          "ライフは5つ。"
+          "ライフは5つ。",
           "すべて失うとゲームオーバーです。",
           "",
           "▶︎次のページ"
@@ -327,7 +327,8 @@
         drawMultilineText([
           "■操作方法",
           "・スマホ",
-          "  移動：指を画面に置いたまま左右にスライド",
+          "  移動：指を画面に置いたまま",
+           "       左右にスライド",
           "  発射：別の指で画面タップ",
           "",
           "・PC",
@@ -339,12 +340,18 @@
       } else if (screen === "credits") {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         drawMultilineText([
-          "◾︎使用させていただいた音源",
-          "タイトル・ルール画面BGM：北見ヒツジ様「Lame SPY」",
-          "ゲームBGM：ザイオン様「The Swing of Time」",
-          "音源提供：フリーBGM DOVA-SYNDROME 様",
-          "",
-          "▶︎次のページ"
+ "◾︎使用させていただいた音源",
+  "",
+  "タイトル・ルール画面BGM：",
+  "北見ヒツジ様「Lame SPY」",
+  "",
+  "ゲームBGM：",
+  "ザイオン様「The Swing of Time」",
+  "",
+  "音源提供：フリーBGM",
+  "DOVA-SYNDROME 様",
+  "",
+  "▶︎次のページ"
         ]);
       } else if (screen === "startPrompt") {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
